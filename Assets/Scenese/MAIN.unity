@@ -139,7 +139,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14a7073a99b064fdc8a35ff8793644e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ballPrefab: {fileID: 1307059381822866, guid: af274e34a98f346c2b9e745e7e0909a5, type: 2}
+  characterPrefab: {fileID: 1588045327420034, guid: 9a82f507fa7cb477da2483cb15e4b215,
+    type: 2}
   hexPrefab: {fileID: 1108037862888048, guid: f699ef79be16e44a394c5a51138d0dbd, type: 2}
+  hexNormal: {fileID: 21300000, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
+  hexHighlight: {fileID: 21300002, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
+  hexHighlightRed: {fileID: 21300004, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
+  hexGoal: {fileID: 21300006, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
   fieldWidth: 11
   fieldHeight: 7
 --- !u!4 &1136433540
@@ -207,7 +214,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 4
+  orthographic size: 3.4
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -305,3 +312,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e39e1e26535064086a27431d24907846, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  hexHighlight: {fileID: 21300002, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
+  walkDistance: 2
+  kickDistance: 4

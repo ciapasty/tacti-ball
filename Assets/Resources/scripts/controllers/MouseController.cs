@@ -7,7 +7,8 @@ public class MouseController : MonoBehaviour {
 	PlayfieldController pfc;
 
 	public Sprite hexHighlight;
-	public int distance = 1;
+	public int walkDistance = 2;
+	public int kickDistance = 4;
 
 	// Use this for initialization
 	void Start () {
@@ -19,39 +20,21 @@ public class MouseController : MonoBehaviour {
 		if (Input.GetMouseButtonDown(0)) {
 			RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
 			if(hit.collider != null) {
-				Hex hex = pfc.getHexFor(hit.collider.gameObject);
-				HashSet<Hex> hexNb = pfc.playfield.getNeighboursFor(hex, distance);
-
-				foreach (var h in hexNb) {
-					if (h == null) { continue; }
-
-					GameObject hexGO = pfc.getHexGOFor(h);
-					hexGO.GetComponent<SpriteRenderer>().sprite = hexHighlight;
-				}
-
-				Debug.Log ("Target Position: " + hit.collider.gameObject.transform.name);
+				Hex hex = pfc.getHexForGO(hit.collider.gameObject);
+				pfc.getAvailableHexesForAction("move", hex, walkDistance);
 			}
 		}
 
 		if (Input.GetMouseButtonDown(1)) {
 			RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
 			if(hit.collider != null) {
-				Hex hex = pfc.getHexFor(hit.collider.gameObject);
-				HashSet<Hex> hexNb = pfc.playfield.getStraightNeighboursFor(hex, distance);
-
-				foreach (var h in hexNb) {
-					if (h == null) { continue; }
-
-					GameObject hexGO = pfc.getHexGOFor(h);
-					hexGO.GetComponent<SpriteRenderer>().sprite = hexHighlight;
-				}
-
-				Debug.Log ("Target Position: " + hit.collider.gameObject.transform.name);
+				Hex hex = pfc.getHexForGO(hit.collider.gameObject);
+				pfc.getAvailableHexesForAction("kick", hex, kickDistance);
 			}
 		}
 
 		if (Input.GetKeyDown(KeyCode.C)) {
-			pfc.drawHexes();
+			pfc.removeHighlight();
 		}
 	}
 }

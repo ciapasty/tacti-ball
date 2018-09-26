@@ -1,11 +1,16 @@
 fileFormatVersion: 2
 guid: 14a7073a99b064fdc8a35ff8793644e6
-timeCreated: 1537714300
+timeCreated: 1537894566
 licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - hexPrefab: {instanceID: 0}
+  - hexNormal: {fileID: 21300000, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
+  - hexHighlight: {fileID: 21300002, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
+  - hexHighlightRed: {instanceID: 0}
+  - hexGoal: {fileID: 21300006, guid: 646270bdba39b435bb7eea12530f37e6, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
