@@ -1,15 +1,12 @@
 fileFormatVersion: 2
-guid: 646270bdba39b435bb7eea12530f37e6
-timeCreated: 1537978943
+guid: ffc6438b9ad414f1185c432cfdddc889
+timeCreated: 1537988657
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: hexes_0
-    21300002: hexes_1
-    21300004: hexes_2
-    21300006: hexes_3
-    21300008: hexes_4
-    21300010: hexes_5
+    21300000: actions_0
+    21300002: actions_1
+    21300004: actions_2
   externalObjects: {}
   serializedVersion: 4
   mipmaps:
@@ -93,63 +90,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: hexes_0
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 32
-        width: 16
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: hexes_1
-      rect:
-        serializedVersion: 2
-        x: 16
-        y: 32
-        width: 16
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: hexes_2
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 16
-        width: 16
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: hexes_3
-      rect:
-        serializedVersion: 2
-        x: 16
-        y: 16
-        width: 16
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: hexes_4
+      name: actions_0
       rect:
         serializedVersion: 2
         x: 0
@@ -163,10 +104,24 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: hexes_5
+      name: actions_1
       rect:
         serializedVersion: 2
         x: 16
+        y: 0
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: actions_2
+      rect:
+        serializedVersion: 2
+        x: 32
         y: 0
         width: 16
         height: 16

@@ -4,40 +4,39 @@ using UnityEngine;
 
 public class PlayfieldController : MonoBehaviour {
 
-	public static PlayfieldController Instance;
-
 	public GameObject ballPrefab;
 	public GameObject characterPrefab;
 	public GameObject hexPrefab;
 	public Sprite hexNormal;
 	public Sprite hexHighlight;
-	public Sprite hexHighlightRed;
 	public Sprite hexGoal;
+	public Sprite hexGoalHighlight;
 
 	Dictionary<Hex, GameObject> hexGOMap;
 	Dictionary<GameObject, Hex> GOHexMap;
+	public HashSet<Hex> highlightedHexes { get; protected set; }
 
-	HashSet<Hex> availableHexesForAction;
+
+	Dictionary<Character, GameObject> charGOMap;
+	Dictionary<GameObject, Character> GOCharMap;
 
 	public int fieldWidth = 11;
 	public int fieldHeight = 7;
 
 	public Playfield playfield { get; protected set; }
-	Character[,] characters;
 
 	int currentPlayer;
 	int[] score;
 
 	void OnEnable() {
-		if (Instance != null) {
-			Debug.LogError("There should be only one PlayfieldController!");
-		}
-		Instance = this;
-
 		playfield = new Playfield(fieldWidth, fieldHeight);
 		hexGOMap = new Dictionary<Hex, GameObject>();
 		GOHexMap = new Dictionary<GameObject, Hex>();
-		availableHexesForAction = new HashSet<Hex>();
+
+		charGOMap = new Dictionary<Character, GameObject>();
+		GOCharMap = new Dictionary<GameObject, Character>();
+
+		playfield.registerCharacterPositionSetCallback(moveCharacter);
 	}
 
 	// Use this for initialization
@@ -50,6 +49,94 @@ public class PlayfieldController : MonoBehaviour {
 	// Update is called once per frame
 	void Update() {
 		
+	}
+
+	// ==== Public methods ====
+
+	public void resetField() {
+		
+	}
+
+	public Hex getHexForGO(GameObject go) {
+		return GOHexMap[go];
+	}
+
+	public GameObject getGOForHex(Hex hex) {
+		return hexGOMap[hex];
+	}
+
+	public Character getCharacterForGO(GameObject go) {
+		return GOCharMap[go];
+	}
+
+	public GameObject getGOForCharacter(Character c) {
+		return charGOMap[c];
+	}
+
+	public void highlightHexes(HashSet<Hex> hexes) {
+		if (highlightedHexes != null)
+			removeHighlight();
+
+		highlightedHexes = new HashSet<Hex>();
+		foreach (var hex in hexes) {
+			if (hex == null)
+				continue;
+
+			if (hex.isGoal) {
+				hexGOMap[hex].GetComponent<SpriteRenderer>().sprite = hexGoalHighlight;
+			} else {
+				hexGOMap[hex].GetComponent<SpriteRenderer>().sprite = hexHighlight;	
+			}
+			highlightedHexes.Add(hex);
+		}
+	}
+
+	public void removeHighlight() {
+		if (highlightedHexes == null) {
+			Debug.LogError("PlayfieldController.removeHighlight - ERROR: Tried to remove highlight with no hexes higlighted.");
+			return;
+		}
+
+		foreach (var hex in highlightedHexes) {
+			if (hex == null)
+				continue;
+
+			if (hex.isGoal) {
+				hexGOMap[hex].GetComponent<SpriteRenderer>().sprite = hexGoal;
+			} else {
+				hexGOMap[hex].GetComponent<SpriteRenderer>().sprite = hexNormal;
+			}
+		}
+		highlightedHexes = null;
+	}
+
+	// ==== Unitility methods ====
+
+	void spawnCharacters() {
+		playfield.createCharacters();
+		foreach (var c in playfield.characters) {
+			Hex positionHex = c.hex;
+			GameObject hexGO = hexGOMap[positionHex];
+			GameObject charGO = Instantiate(characterPrefab, hexGO.transform.position, Quaternion.identity);
+			SpriteRenderer charSR = charGO.GetComponent<SpriteRenderer>();
+			charSR.color = Color.yellow;
+			if (c.player == 1) {
+				charSR.color = Color.green;
+				charSR.flipX = true;
+			}
+
+			charGO.transform.name = "char_" + c.player;
+
+			charGOMap.Add(c, charGO);
+			GOCharMap.Add(charGO, c);
+		}
+	}
+
+	void moveCharacter(Character c) {
+		GameObject charGO = charGOMap[c];
+		GameObject hexGO = hexGOMap[c.hex];
+
+		charGO.transform.position = hexGO.transform.position;
 	}
 
 	void drawHexes() {
@@ -84,81 +171,6 @@ public class PlayfieldController : MonoBehaviour {
 				hexGOMap.Add(hex, hexGO);
 				GOHexMap.Add(hexGO, hex);
 			}
-		}
-	}
-
-	public Hex getHexForGO(GameObject go) {
-		return GOHexMap[go];
-	}
-
-	public GameObject getGOForHex(Hex hex) {
-		return hexGOMap[hex];
-	}
-
-	public void getAvailableHexesForAction(string action, Hex origin, int distance) {
-		if (availableHexesForAction.Count > 0) {
-			removeHighlight();
-		}
-
-		switch (action) {
-		case "move":
-			availableHexesForAction = playfield.getWalkableNeighboursFor(origin, distance);
-			break;
-		case "kick":
-			availableHexesForAction = playfield.getStraightNeighboursFor(origin, distance);
-			break;
-		case "tackle":
-			break;
-		default:
-			return;
-		}
-
-		highlightAvailableHexes();
-	}
-
-	void highlightAvailableHexes() {
-		foreach (var hex in availableHexesForAction) {
-			if (hex == null)
-				continue;
-
-			if (hex.isWalkable) {
-				hexGOMap[hex].GetComponent<SpriteRenderer>().sprite = hexHighlight;	
-			} else {
-				if (hex.isGoal)
-					// TODO: Add proper goal hex highlight
-					continue;
-				hexGOMap[hex].GetComponent<SpriteRenderer>().sprite = hexHighlightRed;	
-			}
-		}
-	}
-
-	public void removeHighlight() {
-		if (availableHexesForAction.Count == 0)
-			return;
-
-		foreach (var hex in availableHexesForAction) {
-			if (hex == null)
-				continue;
-			
-			hexGOMap[hex].GetComponent<SpriteRenderer>().sprite = hexNormal;
-		}
-
-		availableHexesForAction = new HashSet<Hex>();
-	}
-
-	void spawnCharacters() {
-		foreach (var c in playfield.characters) {
-			Hex positionHex = c.position;
-			GameObject hexGO = hexGOMap[positionHex];
-			GameObject charGO = Instantiate(characterPrefab, hexGO.transform.position, Quaternion.identity);
-			SpriteRenderer charSR = charGO.GetComponent<SpriteRenderer>();
-			charSR.color = Color.yellow;
-			if (c.player == 1) {
-				charSR.color = Color.green;
-				charSR.flipX = true;
-			}
-
-			charGO.transform.name = "char_" + c.player;
 		}
 	}
 

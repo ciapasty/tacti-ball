@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 public class Playfield {
@@ -8,6 +9,8 @@ public class Playfield {
 
 	Hex[,] hexes;
 	public Character[,] characters { get; protected set; }
+
+	Action<Character> cbCharPositionSet;
 
 	// int[x,y] -> 0-2 Player1, 3-5 Player2
 	public int[,] charSpawns = new int[,] { {3, 1}, {2, 3}, {3, 5}, {7, 1}, {8, 3}, {7, 5} };
@@ -45,16 +48,9 @@ public class Playfield {
 				}
 			}
 		}
-
-		characters = new Character[2,3];
-		for (int player = 0; player < 2; player++) {
-			for (int character = 0; character < 3; character++) {
-				Character c = new Character(player);
-				c.setPosition(getHexAt(charSpawns[3*player+character,0], charSpawns[3*player+character,1]));
-				characters[player,character] = c;
-			}
-		}
 	}
+
+	// ==== Public methods ====
 
 	public Hex getHexAt(int x, int y) {
 		if ((x < 0 || y < 0) || (x >= width || y >= height)) {
@@ -63,8 +59,71 @@ public class Playfield {
 		return hexes[x,y];
 	}
 
-	// TODO: Add proper goal tile handling. It's not walkable, but it's shootable.
+	public HashSet<Hex> getAvailableHexesForAction(string action, Hex origin) {
+		switch (action) {
+		case "move":
+			return getWalkableNeighboursFor(origin, 1);
+		case "kick":
+			return getStraightNeighboursFor(origin, 4);
+		case "tackle":
+			Hex hex = getNeighbourWithBall(origin);
+			if (hex != null) {
+				HashSet<Hex> set = new HashSet<Hex>();
+				set.Add(hex);
+				return set;
+			}
+			return null;
+		default:
+			return null;
+		}
+	}
 
+	public List<Character> getCharactersWithActionsForPlayer(int player) {
+		List<Character> charsWithActions = new List<Character>();
+		for (int i = 0; i < 3; i++) {
+			if (characters[player,i].availableActions > 0)
+				charsWithActions.Add(characters[player,i]);
+		}
+		return charsWithActions;
+	}
+
+	public Hex getNeighbourWithBall(Hex hex) {
+		List<Hex> neighbours = getNeighboursFor(hex, false);
+		foreach (var c in characters) {
+			if (neighbours.Contains(c.hex) && c.hasBall)
+				return c.hex;
+		}
+		return null;
+	}
+
+	public void createCharacters() {
+		characters = new Character[2,3];
+		for (int player = 0; player < 2; player++) {
+			for (int character = 0; character < 3; character++) {
+				Character c = new Character(player, getHexAt(charSpawns[3*player+character,0], charSpawns[3*player+character,1]));
+				c.registerPositionSetCallback(cbCharPositionSet);
+				characters[player,character] = c;
+			}
+		}
+	}
+
+	// ==== CALLBACKS ====
+
+	public void registerCharacterPositionSetCallback(Action<Character> callback) {
+		cbCharPositionSet += callback;
+	}
+
+	public void unregisterCharacterPositionSetCallback(Action<Character> callback) {
+		cbCharPositionSet += callback;
+	}
+
+	// ==== Utility methods ====
+
+	void characterPositionSet(Character c) {
+		if (cbCharPositionSet != null)
+			cbCharPositionSet(c);
+	}
+		
 	Hex getWalkableHexAt(int x, int y) {
 		Hex hex = getHexAt(x, y);
 		if (hex == null || !hex.isWalkable)
@@ -73,12 +132,12 @@ public class Playfield {
 		return hex;
 	}
 
-	public HashSet<Hex> getWalkableNeighboursFor(Hex hex, int distance) {
+	HashSet<Hex> getWalkableNeighboursFor(Hex hex, int distance) {
 		if (distance <= 0) 
 			return null;
 
 		HashSet<Hex> neighbours = new HashSet<Hex>();
-		neighbours = new HashSet<Hex>(getWalkableNeighboursFor(hex));
+		neighbours = new HashSet<Hex>(getNeighboursFor(hex, true));
 
 		while(distance > 1) {
 			HashSet<Hex> neighboursIter = new HashSet<Hex>();
@@ -87,7 +146,7 @@ public class Playfield {
 				if (h == null)
 					continue;
 
-				neighboursIter.UnionWith(new HashSet<Hex>(getWalkableNeighboursFor(h)));
+				neighboursIter.UnionWith(new HashSet<Hex>(getNeighboursFor(h, true)));
 			}
 
 			neighbours.UnionWith(neighboursIter);
@@ -99,38 +158,38 @@ public class Playfield {
 		return neighbours;
 	}
 
-	List<Hex> getWalkableNeighboursFor(Hex hex) {
+	List<Hex> getNeighboursFor(Hex hex, bool walkable) {
 		if (hex == null)
 			return null;
 
 		List<Hex> set = new List<Hex>();
 
-		set.Add(getWalkableHexAt(hex.x-1, hex.y)); 			//left
-		set.Add(getWalkableHexAt(hex.x+1, hex.y));			//right
+		set.Add(walkable ? getWalkableHexAt(hex.x-1, hex.y) : getHexAt(hex.x-1, hex.y)); 			//left
+		set.Add(walkable ? getWalkableHexAt(hex.x+1, hex.y) : getHexAt(hex.x+1, hex.y));			//right
 
 		if (hex.y % 2 == 0) {
-			set.Add(getWalkableHexAt(hex.x-1, hex.y+1));	// left up
-			set.Add(getWalkableHexAt(hex.x, hex.y+1));		// right up
-			set.Add(getWalkableHexAt(hex.x, hex.y-1));		// right down
-			set.Add(getWalkableHexAt(hex.x-1, hex.y-1));	// left down
+			set.Add(walkable ? getWalkableHexAt(hex.x-1, hex.y+1) : getHexAt(hex.x-1, hex.y+1));	// left up
+			set.Add(walkable ? getWalkableHexAt(hex.x, hex.y+1) : getHexAt(hex.x, hex.y+1));		// right up
+			set.Add(walkable ? getWalkableHexAt(hex.x, hex.y-1) : getHexAt(hex.x, hex.y-1));		// right down
+			set.Add(walkable ? getWalkableHexAt(hex.x-1, hex.y-1) : getHexAt(hex.x-1, hex.y-1));	// left down
 		} else {
-			set.Add(getWalkableHexAt(hex.x, hex.y+1));		// left up
-			set.Add(getWalkableHexAt(hex.x+1, hex.y+1));	// right up
-			set.Add(getWalkableHexAt(hex.x+1, hex.y-1)); 	// right down
-			set.Add(getWalkableHexAt(hex.x, hex.y-1));		// left down
+			set.Add(walkable ? getWalkableHexAt(hex.x, hex.y+1) : getHexAt(hex.x, hex.y+1));		// left up
+			set.Add(walkable ? getWalkableHexAt(hex.x+1, hex.y+1) : getHexAt(hex.x+1, hex.y+1));	// right up
+			set.Add(walkable ? getWalkableHexAt(hex.x+1, hex.y-1) : getHexAt(hex.x+1, hex.y-1)); 	// right down
+			set.Add(walkable ? getWalkableHexAt(hex.x, hex.y-1) : getHexAt(hex.x, hex.y-1));		// left down
 		}
 
 		return set;
 	}
 
-	public HashSet<Hex> getStraightNeighboursFor(Hex hex, int distance) {
-		List<Hex> neighbours = getWalkableNeighboursFor(hex);
+	HashSet<Hex> getStraightNeighboursFor(Hex hex, int distance) {
+		List<Hex> neighbours = getNeighboursFor(hex, false);
 
 		List<Hex> neighboursIter = neighbours;
 		while (distance > 1) {
 			List<Hex> neighboursIter2 = new List<Hex>();
 			for (int i = 0; i <= 5; i++) {
-				neighboursIter2.Add(getStraightNeighbourInDirection(neighboursIter[i], i));
+				neighboursIter2.Add(getNeighbourInDirection(neighboursIter[i], i));
 			}
 			neighbours.AddRange(neighboursIter2);
 			neighboursIter = neighboursIter2;
@@ -138,10 +197,12 @@ public class Playfield {
 			distance--;
 		}
 
+		neighbours.RemoveRange(0, 6);
+
 		return new HashSet<Hex>(neighbours);
 	}
 
-	Hex getStraightNeighbourInDirection(Hex hex, int direction) {
+	Hex getNeighbourInDirection(Hex hex, int direction) {
 		// 0 - left, 1 - right, 2 - left up, 3 - right up, 4 - right down, 5 - left down
 		if (direction < 0 || direction > 5)
 			return null;
@@ -149,6 +210,17 @@ public class Playfield {
 		if (hex == null)
 			return null;
 
-		return getWalkableNeighboursFor(hex)[direction];
+		if (isCharacterOnHex(hex))
+			return null;
+
+		return getNeighboursFor(hex, false)[direction];
+	}
+
+	bool isCharacterOnHex(Hex hex) {
+		foreach (var c in characters) {
+			if (c.hex == hex)
+				return true;
+		}
+		return false;
 	}
 }

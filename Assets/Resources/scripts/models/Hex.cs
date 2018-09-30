@@ -28,4 +28,8 @@ public class Hex {
 		this.hasBall = hasBall;
 	}
 
+	public void setWalkable (bool walkable) {
+		this.isWalkable = walkable;
+	}
+
 }
