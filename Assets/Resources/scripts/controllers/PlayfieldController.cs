@@ -20,6 +20,8 @@ public class PlayfieldController : MonoBehaviour {
 	Dictionary<Character, GameObject> charGOMap;
 	Dictionary<GameObject, Character> GOCharMap;
 
+	Dictionary<Ball, GameObject> ballGOMap;
+
 	public int fieldWidth = 11;
 	public int fieldHeight = 7;
 
@@ -36,7 +38,13 @@ public class PlayfieldController : MonoBehaviour {
 		charGOMap = new Dictionary<Character, GameObject>();
 		GOCharMap = new Dictionary<GameObject, Character>();
 
-		playfield.registerCharacterPositionSetCallback(moveCharacter);
+		ballGOMap = new Dictionary<Ball, GameObject>();
+
+		playfield.registerCharacterMovedCallback(characterMoved);
+		playfield.createCharacters();
+
+		playfield.registerBallMovedCallback(ballMoved);
+		playfield.createBall();
 	}
 
 	// Use this for initialization
@@ -52,10 +60,6 @@ public class PlayfieldController : MonoBehaviour {
 	}
 
 	// ==== Public methods ====
-
-	public void resetField() {
-		
-	}
 
 	public Hex getHexForGO(GameObject go) {
 		return GOHexMap[go];
@@ -110,10 +114,25 @@ public class PlayfieldController : MonoBehaviour {
 		highlightedHexes = null;
 	}
 
+	// ==== CALLBACKS ====
+
+	void characterMoved(Character c) {
+		GameObject charGO = charGOMap[c];
+		GameObject hexGO = hexGOMap[c.hex];
+
+		charGO.transform.position = hexGO.transform.position;
+	}
+
+	void ballMoved(Ball b) {
+		GameObject ballGO = ballGOMap[b];
+		GameObject hexGO = hexGOMap[b.hex];
+
+		ballGO.transform.position = hexGO.transform.position;
+	}
+
 	// ==== Unitility methods ====
 
 	void spawnCharacters() {
-		playfield.createCharacters();
 		foreach (var c in playfield.characters) {
 			Hex positionHex = c.hex;
 			GameObject hexGO = hexGOMap[positionHex];
@@ -132,11 +151,9 @@ public class PlayfieldController : MonoBehaviour {
 		}
 	}
 
-	void moveCharacter(Character c) {
-		GameObject charGO = charGOMap[c];
-		GameObject hexGO = hexGOMap[c.hex];
-
-		charGO.transform.position = hexGO.transform.position;
+	// TODO: redo properly
+	public void updateCharacterActionsUI(Character c) {
+		getGOForCharacter(c).GetComponentInChildren<UnityEngine.UI.Text>().text = c.availableActions.ToString();
 	}
 
 	void drawHexes() {
@@ -175,12 +192,10 @@ public class PlayfieldController : MonoBehaviour {
 	}
 
 	void spawnBall() {
-		// TODO: REDO
-		Hex ballSpawn = playfield.getHexAt(playfield.ballSpawn[0], playfield.ballSpawn[1]);
-		GameObject spawnGO = hexGOMap[ballSpawn];
+		GameObject spawnGO = hexGOMap[playfield.ball.hex];
 		GameObject ballGO = Instantiate(ballPrefab, spawnGO.transform.position, Quaternion.identity);
 		ballGO.transform.name = "ball";
-		ballSpawn.setBall(true);
+		ballGOMap.Add(playfield.ball, ballGO);
 	}
 
 }

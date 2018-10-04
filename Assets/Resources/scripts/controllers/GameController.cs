@@ -13,7 +13,7 @@ public class GameController : MonoBehaviour {
 
 	PlayfieldController pfc;
 
-	enum GameState {Reset, PlayerStart, CharacterSelect, CharacterAction};
+	enum GameState { SwitchTurn, PlayerStart, CharacterSelect, CharacterAction };
 	GameState gameState;
 
 	int activePlayer;	// 0 - player 1; 1 - player 2
@@ -32,16 +32,21 @@ public class GameController : MonoBehaviour {
 	void Start () {
 		pfc = FindObjectOfType<PlayfieldController>();
 
-		activePlayer = 1;
+		activePlayer = 0;
 		gameState = GameState.PlayerStart;
 	}
 
 	// Update is called once per frame
 	void Update () {
 		// Reset state - change turns
-		if (gameState == GameState.Reset) {
+		if (gameState == GameState.SwitchTurn) {
 			activePlayer = (activePlayer == 0) ? 1 : 0;
-			pfc.resetField();
+			foreach (var c in pfc.playfield.characters) {
+				if (c.player == activePlayer) {
+					c.availableActions = (c.hasBall == false) ? 2 : 1;
+					pfc.updateCharacterActionsUI(c);
+				}
+			}
 			gameState = GameState.PlayerStart;
 		}
 
@@ -50,6 +55,10 @@ public class GameController : MonoBehaviour {
 		// - move to Select Character state
 		if (gameState == GameState.PlayerStart) {
 			playerCharacters = pfc.playfield.getCharactersWithActionsForPlayer(activePlayer);
+			if (playerCharacters.Count == 0) {
+				gameState = GameState.SwitchTurn;
+				return;
+			}
 			highlightCharacterHexesForPlayer(activePlayer);
 			gameState = GameState.CharacterSelect;
 		}
@@ -112,17 +121,23 @@ public class GameController : MonoBehaviour {
 						if(pfc.highlightedHexes.Contains(hex)) {
 							switch (selectedAction) {
 							case "move":
-
+//								selectedCharacter.availableActions -= 1;
+//								selectedCharacter.moveToHex(hex);
+								selectedCharacter.performAction(pfc.playfield.moveCharacterAction, hex);
 								break;
 							case "kick":
-
+								selectedCharacter.performAction(pfc.playfield.kickBallAction, hex);
 								break;
 							case "tackle":
-
+								selectedCharacter.performAction(pfc.playfield.tackleAction, hex);
 								break;
 							default:
 								break;
 							}
+
+							pfc.removeHighlight();
+							pfc.updateCharacterActionsUI(selectedCharacter);
+							gameState = GameState.PlayerStart;
 						}
 					}
 				}
@@ -133,6 +148,10 @@ public class GameController : MonoBehaviour {
 				gameState = GameState.PlayerStart;
 			}
 		}
+	}
+
+	void finishTurn() {
+		gameState = GameState.SwitchTurn;
 	}
 
 	void highlightCharacterHexesForPlayer(int player) {
@@ -186,4 +205,3 @@ public class GameController : MonoBehaviour {
 	}
 
 }
-

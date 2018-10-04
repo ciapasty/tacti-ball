@@ -9,11 +9,17 @@ public class Playfield {
 
 	Hex[,] hexes;
 	public Character[,] characters { get; protected set; }
+	public Ball ball { get; protected set; }
 
-	Action<Character> cbCharPositionSet;
+	Hex[,] ghostHexes;
+	public Character[,] ghostCharacters { get; protected set; }
+	public Ball ghostBall { get; protected set; }
+
+	Action<Character> cbCharacterMoved;
+	Action<Ball> cbBallMoved;
 
 	// int[x,y] -> 0-2 Player1, 3-5 Player2
-	public int[,] charSpawns = new int[,] { {3, 1}, {2, 3}, {3, 5}, {7, 1}, {8, 3}, {7, 5} };
+	public int[,] charSpawns = new int[,] { {3, 1}, {4, 3}, {3, 5}, {7, 1}, {8, 3}, {7, 5} };
 	public int[] ballSpawn = new int[] {5, 3};
 
 	public Playfield(int width, int height)	{
@@ -56,6 +62,7 @@ public class Playfield {
 		if ((x < 0 || y < 0) || (x >= width || y >= height)) {
 			return null;
 		}
+
 		return hexes[x,y];
 	}
 
@@ -101,28 +108,84 @@ public class Playfield {
 		for (int player = 0; player < 2; player++) {
 			for (int character = 0; character < 3; character++) {
 				Character c = new Character(player, getHexAt(charSpawns[3*player+character,0], charSpawns[3*player+character,1]));
-				c.registerPositionSetCallback(cbCharPositionSet);
+				c.registerCharacterMovedCallback(characterMoved);
 				characters[player,character] = c;
 			}
 		}
 	}
 
-	// ==== CALLBACKS ====
-
-	public void registerCharacterPositionSetCallback(Action<Character> callback) {
-		cbCharPositionSet += callback;
+	public void createBall() {
+		ball = new Ball(getHexAt(ballSpawn[0], ballSpawn[1]));
+		ball.registerBallMovedCallback(ballMoved);
 	}
 
-	public void unregisterCharacterPositionSetCallback(Action<Character> callback) {
-		cbCharPositionSet += callback;
+	public void endPlayerTurn() {
+		
+	}
+
+	// ==== CALLBACKS ====
+
+	public void registerCharacterMovedCallback(Action<Character> callback) {
+		cbCharacterMoved += callback;
+	}
+
+	public void unregisterCharacterMovedCallback(Action<Character> callback) {
+		cbCharacterMoved += callback;
+	}
+
+	void characterMoved(Character c) {
+		if (ball.hex == c.hex) {
+			ball.pickedUpByCharacter(c);
+			c.hasBall = true;
+		}
+
+		if (cbCharacterMoved != null)
+			cbCharacterMoved(c);
+	}
+
+	public void registerBallMovedCallback(Action<Ball> callback) {
+		cbBallMoved += callback;
+	}
+
+	public void unregisterBallMovedCallback(Action<Ball> callback) {
+		cbBallMoved += callback;
+	}
+
+	void ballMoved(Ball b) {
+		if (ball.carriedBy == null) {
+			Character c = getCharacterOnHex(ball.hex);
+			if (c != null) {
+				ball.pickedUpByCharacter(c);
+				return;
+			}
+		}
+
+		if (cbBallMoved != null)
+			cbBallMoved(ball);
+	}
+
+	// ==== Character Actions ====
+
+	public void moveCharacterAction(Character c, Hex hex) {
+		c.hex.setWalkable(true);
+		c.hex = hex;
+		if (c.hasBall)
+			ballMoved(ball);
+
+		hex.setWalkable(false);
+	}
+
+	public void kickBallAction(Character c, Hex hex) {
+		c.hasBall = false;
+		ball.droppedOnHex(hex);
+	}
+
+	public void tackleAction(Character c, Hex hex) {
+		ball.carriedBy.hasBall = false;
+		ball.pickedUpByCharacter(c);
 	}
 
 	// ==== Utility methods ====
-
-	void characterPositionSet(Character c) {
-		if (cbCharPositionSet != null)
-			cbCharPositionSet(c);
-	}
 		
 	Hex getWalkableHexAt(int x, int y) {
 		Hex hex = getHexAt(x, y);
@@ -210,17 +273,17 @@ public class Playfield {
 		if (hex == null)
 			return null;
 
-		if (isCharacterOnHex(hex))
+		if (getCharacterOnHex(hex) != null)
 			return null;
 
 		return getNeighboursFor(hex, false)[direction];
 	}
 
-	bool isCharacterOnHex(Hex hex) {
+	Character getCharacterOnHex(Hex hex) {
 		foreach (var c in characters) {
 			if (c.hex == hex)
-				return true;
+				return c;
 		}
-		return false;
+		return null;
 	}
 }
